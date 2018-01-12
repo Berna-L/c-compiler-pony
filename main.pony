@@ -13,8 +13,15 @@ actor Main
 
                     while file.errno() is FileOK do
                         try
-                            for token in Lexer.tokenizer(String.from_array(file.read(file.size())))?.values() do
+                            let tokens = Lexer.tokenizer(String.from_array(file.read(file.size())))?
+                            for token in tokens.values() do
                                 env.out.print(token.string())
+                            end
+                            try
+                                let ast = Parser(tokens)?
+                                env.out.print(ast.string())
+                            else
+                                env.err.print("Erro durante o parse")
                             end
                         else
                             env.err.print("Erro durante a tokenização")
