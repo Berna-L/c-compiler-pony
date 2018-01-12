@@ -4,7 +4,7 @@ class Program
     new create(function': Function) =>
         function = function'
 
-    fun string(): String => "Program <" + function.string() + ">"
+    fun string(): String => function.string()
 
 class Function
     let id: String ref
@@ -14,7 +14,10 @@ class Function
         id = id'
         statement = statement'
 
-    fun string(): String => "int " + id + "() {" + statement.string() + "}"
+    fun string(): String =>
+        "FUN INT " + id + ":\n"
+        + "\tparams: ()\n"
+        + "\tbody:\n\t\t" + statement.string()
 
 class Statement
     let expression: Expression
@@ -22,7 +25,7 @@ class Statement
     new create(expression': Expression) =>
         expression = expression'
 
-    fun string(): String => "statement " + expression.string()
+    fun string(): String => "RETURN " + expression.string()
 
 class Expression
     let int: USize
@@ -30,7 +33,7 @@ class Expression
     new create(int': USize) =>
         int = int'
 
-    fun string(): String => "return " + int.string() + ";"
+    fun string(): String => "Int<" + int.string() + ">"
 
 primitive ProgramParser
     fun apply(tokens: Array[Token]): Program ? =>
@@ -38,38 +41,27 @@ primitive ProgramParser
 
 primitive FunctionParser
     fun apply(tokens: Array[Token]): Function ? =>
-       
-        match tokens.shift()? | KeywordInt =>
-            match tokens.shift()? | let idToken: Identifier =>
-                let identifier = idToken.value
-                match tokens.shift()? | OpenParenthesis =>
-                    match tokens.shift()? | CloseParenthesis =>
-                        match tokens.shift()? | OpenBrace =>
-                            let statement = StatementParser(tokens)?
-                            match tokens.shift()? | CloseBrace =>
-                                return Function(identifier, statement)
-                            else error end
-                        else error end
-                    else error end
-                else error end
-            else error end
-        else error end
+        tokens.shift()? as KeywordInt
+        let idToken = tokens.shift()? as Identifier
+        let identifier = idToken.value
+        tokens.shift()? as OpenParenthesis
+        tokens.shift()? as CloseParenthesis
+        tokens.shift()? as OpenBrace
+        let statement = StatementParser(tokens)?
+        Function(identifier, statement)
+        
 
 primitive StatementParser
     fun apply(tokens: Array[Token]): Statement ? =>
-        match tokens.shift()? | KeywordReturn => 
-            let expression = ExpressionParser(tokens)?
-            match tokens.shift()? | Semicolon =>
-                return Statement(expression)
-            else error end
-        else error end
+        tokens.shift()? as KeywordReturn
+        let expression = ExpressionParser(tokens)?
+        tokens.shift()? as Semicolon
+        Statement(expression)
 
 primitive ExpressionParser
     fun apply(tokens: Array[Token]): Expression ? =>
-        let token = tokens.shift()?
-        match token | let literal: IntegerLiteral =>
-            return Expression(literal.value)
-        else error end
+        let literal = tokens.shift()? as IntegerLiteral
+        Expression(literal.value)
 
 
 type AST is (

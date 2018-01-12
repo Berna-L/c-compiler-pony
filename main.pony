@@ -17,9 +17,14 @@ actor Main
                             for token in tokens.values() do
                                 env.out.print(token.string())
                             end
+                            env.out.print("=============================================\n" + 
+                            "Fim da tokenização do arquivo " + arquivo + 
+                            "\n=============================================")                            
                             try
                                 let ast = Parser(tokens)?
                                 env.out.print(ast.string())
+                                let assembly = Generator(ast)
+                                env.out.print(assembly)
                             else
                                 env.err.print("Erro durante o parse")
                             end
@@ -27,9 +32,7 @@ actor Main
                             env.err.print("Erro durante a tokenização")
                         end
                     end
-                    env.out.print("=============================================\n" + 
-                    "Fim da tokenização do arquivo " + arquivo + 
-                    "\n=============================================")
+
                 else
                     env.err.print("Erro na leitura do arquivo" + arquivo)
                 end
