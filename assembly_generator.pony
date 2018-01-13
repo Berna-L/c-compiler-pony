@@ -10,13 +10,35 @@ primitive FunctionGenerator
 
 primitive StatementGenerator
     fun apply(statement: Statement): String =>
-        "\tmovl\t$" + ExpressionGenerator(statement.expression) + ", %eax\n"
+        ExpressionGenerator(statement.expression)
         + "\tret"
 
 primitive ExpressionGenerator
     fun apply(expression: Expression): String =>
-        expression.int.string()
+        match expression
+        | let operation: UnaryOperation => UnaryOperationGenerator(operation)
+        | let constant: Constant => ConstantGenerator(constant)
+        end
 
+primitive UnaryOperationGenerator
+    fun apply(operation: UnaryOperation): String =>
+        ExpressionGenerator(operation.expression)
+        + UnaryOperatorGenerator(operation.operator)
+
+primitive UnaryOperatorGenerator
+    fun apply(operator: UnaryOperator): String =>
+        match operator
+        | Negation => "\tneg %eax\n"
+        | BitwiseComplement => "\tnot %eax\n"
+        | LogicalNegation =>
+            "\tcmpl\t$0, %eax\n"
+            + "\tmovl $0, %eax\n"
+            + "sete %al\n"
+        end
+
+primitive ConstantGenerator
+    fun apply(constant: Constant): String =>
+        "\tmovl\t$" + constant.int.string() + ", %eax\n"
 
 primitive Generator
     fun apply(ast: AST): String =>

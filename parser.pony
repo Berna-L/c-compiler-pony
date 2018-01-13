@@ -27,7 +27,17 @@ class Statement
 
     fun string(): String => "RETURN " + expression.string()
 
-class Expression
+class UnaryOperation
+    let operator: UnaryOperator
+    let expression: Expression
+
+    new create (operator': UnaryOperator, expression': Expression) =>
+        operator = operator'
+        expression = expression'
+
+    fun string(): String => operator.string() + expression.string()
+
+class Constant
     let int: USize
 
     new create(int': USize) =>
@@ -35,34 +45,48 @@ class Expression
 
     fun string(): String => "Int<" + int.string() + ">"
 
+type Expression is (UnaryOperation | Constant)
+
 primitive ProgramParser
-    fun apply(tokens: Array[Token]): Program ? =>
-        Program(FunctionParser(tokens)?)
+    fun apply(token_array: Array[Token]): Program ? =>
+        Program(FunctionParser(token_array)?)
 
 primitive FunctionParser
-    fun apply(tokens: Array[Token]): Function ? =>
-        tokens.shift()? as KeywordInt
-        let idToken = tokens.shift()? as Identifier
+    fun apply(token_array: Array[Token]): Function ? =>
+        token_array.shift()? as KeywordInt
+        let idToken = token_array.shift()? as Identifier
         let identifier = idToken.value
-        tokens.shift()? as OpenParenthesis
-        tokens.shift()? as CloseParenthesis
-        tokens.shift()? as OpenBrace
-        let statement = StatementParser(tokens)?
+        token_array.shift()? as OpenParenthesis
+        token_array.shift()? as CloseParenthesis
+        token_array.shift()? as OpenBrace
+        let statement = StatementParser(token_array)?
         Function(identifier, statement)
         
 
 primitive StatementParser
-    fun apply(tokens: Array[Token]): Statement ? =>
-        tokens.shift()? as KeywordReturn
-        let expression = ExpressionParser(tokens)?
-        tokens.shift()? as Semicolon
+    fun apply(token_array: Array[Token]): Statement ? =>
+        token_array.shift()? as KeywordReturn
+        let expression = ExpressionParser(token_array)?
+        token_array.shift()? as Semicolon
         Statement(expression)
 
 primitive ExpressionParser
-    fun apply(tokens: Array[Token]): Expression ? =>
-        let literal = tokens.shift()? as IntegerLiteral
-        Expression(literal.value)
+    fun apply(token_array: Array[Token]): Expression ? =>
+        match token_array(0)?
+        | let operator: UnaryOperator => UnaryOperationParser(token_array)?
+        | let literal: IntegerLiteral => ConstantParser(token_array)?
+        else error end
 
+primitive UnaryOperationParser
+    fun apply(token_array: Array[Token]): UnaryOperation ? =>
+        let operator = token_array.shift()? as UnaryOperator
+        let expression = ExpressionParser(token_array)?
+        UnaryOperation(operator, expression)
+
+primitive ConstantParser
+    fun apply(token_array: Array[Token]): Constant ? =>
+        let literal = token_array.shift()? as IntegerLiteral
+        Constant(literal.value)
 
 type AST is (
     Program
@@ -71,5 +95,5 @@ type AST is (
     | Expression)
 
 primitive Parser
-    fun apply(tokens: Array[Token]): AST ? =>
-        ProgramParser(tokens)?
+    fun apply(token_array: Array[Token]): AST ? =>
+        ProgramParser(token_array)?

@@ -35,6 +35,18 @@ primitive Lexer
                 let token = finalize_token(current_token = String)?
                 try token_array.push(token as Token) end
                 token_array.push(Semicolon)
+            | '-' =>
+                let token = finalize_token(current_token = String)?
+                try token_array.push(token as Token) end
+                token_array.push(Negation)
+            | '~' =>
+                let token = finalize_token(current_token = String)?
+                try token_array.push(token as Token) end
+                token_array.push(BitwiseComplement)
+            | '!' =>
+                let token = finalize_token(current_token = String)?
+                try token_array.push(token as Token) end
+                token_array.push(LogicalNegation)
             else
                 current_token.push(char)
             end

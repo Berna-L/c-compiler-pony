@@ -19,6 +19,15 @@ primitive CloseParenthesis
 primitive Semicolon
     fun string(): String => ";"
 
+primitive Negation
+    fun string(): String => "-"
+
+primitive BitwiseComplement
+    fun string(): String => "~"
+
+primitive LogicalNegation
+    fun string(): String => "!"
+
 class Identifier
     let value: String ref
 
@@ -37,12 +46,18 @@ class IntegerLiteral
 
 type Keyword is (KeywordInt | KeywordReturn)
 
+type UnaryOperator is
+    (Negation
+    | BitwiseComplement
+    | LogicalNegation)
+
 type SingleCharacterToken is
     (OpenBrace
     | CloseBrace
     | OpenParenthesis
     | CloseParenthesis
-    | Semicolon)
+    | Semicolon
+    | UnaryOperator)
 
 type MultiCharacterToken is
     (Keyword
