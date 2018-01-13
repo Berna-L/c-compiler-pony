@@ -3,38 +3,33 @@ use "files"
 actor Main
     new create(env: Env) =>
         try
-            for arquivo in env.args.slice(1).values() do
-                let path = FilePath(env.root as AmbientAuth, arquivo)?
+            for file_path_string in env.args.slice(1).values() do
+                let path = FilePath(env.root as AmbientAuth, file_path_string)?
                 match OpenFile(path)
-                | let file: File =>
-                    env.out.print("=============================================\n" + 
-                    "Iniciando tokenização do arquivo " + arquivo + 
-                    "\n=============================================")
-
-                    while file.errno() is FileOK do
+                | let source_file: File =>
+                    if source_file.errno() is FileOK then
                         try
-                            let tokens = Lexer.tokenizer(String.from_array(file.read(file.size())))?
-                            for token in tokens.values() do
-                                env.out.print(token.string())
-                            end
-                            env.out.print("=============================================\n" + 
-                            "Fim da tokenização do arquivo " + arquivo + 
-                            "\n=============================================")                            
+                            let tokens = Lexer.tokenizer(String.from_array(source_file.read(source_file.size())))?
                             try
                                 let ast = Parser(tokens)?
-                                env.out.print(ast.string())
                                 let assembly = Generator(ast)
-                                env.out.print(assembly)
+                                let assembly_file_path_string = file_path_string.substring(0, file_path_string.rfind(".c")?) + ".s"
+                                let assembly_file_path = FilePath(env.root as AmbientAuth, assembly_file_path_string)?
+                                match CreateFile(assembly_file_path)
+                                | let assembly_file: File =>
+                                    assembly_file.write(assembly)
+                                    Compiler(env, assembly_file)
+                                end
                             else
-                                env.err.print("Erro durante o parse")
+                                env.err.print("Error parsing source code from " + file_path_string)
                             end
                         else
-                            env.err.print("Erro durante a tokenização")
+                            env.err.print("Error tokenizing source code from " + file_path_string)
                         end
                     end
 
                 else
-                    env.err.print("Erro na leitura do arquivo" + arquivo)
+                    env.err.print("Error reading file" + file_path_string)
                 end
             end
         end
