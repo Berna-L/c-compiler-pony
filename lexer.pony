@@ -35,10 +35,22 @@ primitive Lexer
                 let token = finalize_token(current_token = String)?
                 try token_array.push(token as Token) end
                 token_array.push(Semicolon)
+            | '+' =>
+                let token = finalize_token(current_token = String)?
+                try token_array.push(token as Token) end
+                token_array.push(Addition)
             | '-' =>
                 let token = finalize_token(current_token = String)?
                 try token_array.push(token as Token) end
-                token_array.push(Negation)
+                token_array.push(Subtraction)
+            | '*' =>
+                let token = finalize_token(current_token = String)?
+                try token_array.push(token as Token) end
+                token_array.push(Multiplication)
+            | '/' =>
+                let token = finalize_token(current_token = String)?
+                try token_array.push(token as Token) end
+                token_array.push(Division)
             | '~' =>
                 let token = finalize_token(current_token = String)?
                 try token_array.push(token as Token) end

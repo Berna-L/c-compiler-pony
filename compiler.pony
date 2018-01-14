@@ -8,10 +8,11 @@ primitive Compiler
         let notifier: ProcessNotify iso = consume client
         try
             let command_path = FilePath(env.root as AmbientAuth, "/bin/gcc")?
-            let args: Array[String] iso = recover Array[String](3) end
+            let args: Array[String] iso = recover Array[String](4) end
             let assembly_file_path = assembly_file.path.path
             let output_file_path = assembly_file_path.substring(0, assembly_file_path.rfind(".s")?)
             args.push("gcc")
+            args.push("-m32")
             args.push(consume assembly_file_path)
             args.push("-o" + consume output_file_path)
             let vars: Array[String] iso = recover Array[String](2) end

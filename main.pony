@@ -1,7 +1,10 @@
 use "files"
 
 actor Main
-    new create(env: Env) =>
+    let env: Env
+
+    new create(env': Env) =>
+        env = env'
         try
             for file_path_string in env.args.slice(1).values() do
                 let path = FilePath(env.root as AmbientAuth, file_path_string)?

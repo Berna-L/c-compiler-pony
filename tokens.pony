@@ -28,6 +28,17 @@ primitive BitwiseComplement
 primitive LogicalNegation
     fun string(): String => "!"
 
+primitive Addition
+    fun string(): String => "+"
+    
+type Subtraction is Negation
+
+primitive Multiplication
+    fun string(): String => "*"
+
+primitive Division
+    fun string(): String => "/"
+
 class Identifier
     let value: String ref
 
@@ -51,13 +62,30 @@ type UnaryOperator is
     | BitwiseComplement
     | LogicalNegation)
 
+type LowPrecedenceBinaryOperator is
+    (Addition
+    | Subtraction)
+
+type HighPrecedenceBinaryOperator is
+    (Multiplication
+    | Division)
+
+type BinaryOperator is
+    (LowPrecedenceBinaryOperator
+    | HighPrecedenceBinaryOperator)
+
+type UnaryBinaryOperator is
+    (UnaryOperator
+    & BinaryOperator)
+
 type SingleCharacterToken is
     (OpenBrace
     | CloseBrace
     | OpenParenthesis
     | CloseParenthesis
     | Semicolon
-    | UnaryOperator)
+    | UnaryOperator
+    | BinaryOperator)
 
 type MultiCharacterToken is
     (Keyword

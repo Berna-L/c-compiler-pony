@@ -27,15 +27,61 @@ class Statement
 
     fun string(): String => "RETURN " + expression.string()
 
+class Expression
+    let lhs: Term
+    let operator_array: Array[LowPrecedenceBinaryOperator]
+    let rhs: Array[Term]
+
+    new create(lhs': Term, operator_array': Array[LowPrecedenceBinaryOperator], rhs': Array[Term]) ? =>
+        lhs = lhs'
+        if (operator_array'.size() == rhs'.size()) then
+            operator_array = operator_array'
+            rhs = rhs'
+        else error end
+
+    fun string(): String =>
+        var return_value = "(" + lhs.string()
+        var i: USize = 0
+        try
+            while i < operator_array.size() do
+                return_value = return_value + " " + operator_array(i)?.string() + " " + rhs(0)?.string()
+                i = i + 1
+            end
+        end
+        return_value + ")"
+
+class Term
+    let lhs: Factor
+    let operator_array: Array[HighPrecedenceBinaryOperator]
+    let rhs: Array[Factor]
+
+    new create(lhs': Factor, operator_array': Array[HighPrecedenceBinaryOperator], rhs': Array[Factor]) ? =>
+        lhs = lhs'
+        if (operator_array'.size() == rhs'.size()) then
+            operator_array = operator_array'
+            rhs = rhs'
+        else error end
+
+    fun string(): String =>
+        var return_value = lhs.string()
+        var i: USize = 0
+        try
+            while i < operator_array.size() do
+                return_value = return_value + " " + operator_array(i)?.string() + " " + rhs(0)?.string()
+                i = i + 1
+            end
+        end
+        return_value
+
 class UnaryOperation
     let operator: UnaryOperator
-    let expression: Expression
+    let factor: Factor
 
-    new create (operator': UnaryOperator, expression': Expression) =>
+    new create (operator': UnaryOperator, factor': Factor) =>
         operator = operator'
-        expression = expression'
+        factor = factor'
 
-    fun string(): String => operator.string() + expression.string()
+    fun string(): String => operator.string() + factor.string()
 
 class Constant
     let int: USize
@@ -45,7 +91,10 @@ class Constant
 
     fun string(): String => "Int<" + int.string() + ">"
 
-type Expression is (UnaryOperation | Constant)
+type Factor is
+    (Expression
+    | UnaryOperation
+    | Constant)
 
 primitive ProgramParser
     fun apply(token_array: Array[Token]): Program ? =>
@@ -61,7 +110,6 @@ primitive FunctionParser
         token_array.shift()? as OpenBrace
         let statement = StatementParser(token_array)?
         Function(identifier, statement)
-        
 
 primitive StatementParser
     fun apply(token_array: Array[Token]): Statement ? =>
@@ -72,15 +120,54 @@ primitive StatementParser
 
 primitive ExpressionParser
     fun apply(token_array: Array[Token]): Expression ? =>
+        let lhs = TermParser(token_array)?
+        let operator_array: Array[LowPrecedenceBinaryOperator] = []
+        let rhs: Array[Term] = []
+        var continue_loop = true
+        try
+            while continue_loop do
+                let operator = token_array(0)? as LowPrecedenceBinaryOperator
+                operator_array.push(operator)
+                token_array.delete(0)?
+                rhs.push(TermParser(token_array)?)
+            end
+        else continue_loop = false
+        end
+        Expression(lhs, operator_array, rhs)?
+
+primitive TermParser
+    fun apply(token_array: Array[Token]): Term ? =>
+        let lhs = FactorParser(token_array)?
+        let operator_array: Array[HighPrecedenceBinaryOperator] = []
+        let rhs: Array[Factor] = []
+        var continue_loop = true
+        try
+            while continue_loop do
+                let operator = token_array(0)? as HighPrecedenceBinaryOperator
+                operator_array.push(operator)
+                token_array.delete(0)?
+                rhs.push(FactorParser(token_array)?)
+            end
+        else continue_loop = false
+        end
+        Term(lhs, operator_array, rhs)?
+
+primitive FactorParser
+    fun apply(token_array: Array[Token]): Factor ? =>
         match token_array(0)?
-        | let operator: UnaryOperator => UnaryOperationParser(token_array)?
+        | OpenParenthesis =>
+            token_array.shift()? as OpenParenthesis
+            let expression = ExpressionParser(token_array)?
+            token_array.shift()? as CloseParenthesis
+            expression
+        | let unary: UnaryOperator => UnaryOperationParser(token_array)?
         | let literal: IntegerLiteral => ConstantParser(token_array)?
         else error end
 
 primitive UnaryOperationParser
     fun apply(token_array: Array[Token]): UnaryOperation ? =>
         let operator = token_array.shift()? as UnaryOperator
-        let expression = ExpressionParser(token_array)?
+        let expression = FactorParser(token_array)?
         UnaryOperation(operator, expression)
 
 primitive ConstantParser
